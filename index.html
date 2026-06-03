@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>GRAVE ESCAPE 3D - Retro Roguelike Raycaster Shooter</title>
+  <!-- Modern clean typography from Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  
+  <!-- CSS Styling Sheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Game Cabinet Wrapper -->
+  <div id="cabinet">
+    <!-- Scanlines effect -->
+    <div id="crt-overlay"></div>
+
+    <!-- Main Game Box with Screens -->
+    <div id="screen-container">
+      
+      <!-- Fullscreen Damage Flash and Pickup Flash -->
+      <div id="damage-flash"></div>
+      <div id="pickup-flash"></div>
+
+      <!-- Viewport (Main 3D Scene Rendering) -->
+      <div id="viewport-container">
+        <canvas id="gameCanvas" width="320" height="200"></canvas>
+
+        <!-- Debug Toggle Button -->
+        <button id="btn-debug-toggle" style="position: absolute; top: 10px; right: 10px; z-index: 1000; font-family: 'Share Tech Mono', monospace; font-size: 11px; background: rgba(28, 29, 36, 0.85); color: #00ffcc; border: 2px solid #00ffcc; padding: 4px 8px; cursor: pointer; border-radius: 4px; box-shadow: 0 0 8px rgba(0,255,204,0.3); transition: all 0.2s;">🛠️ DEBUG MENU</button>
+
+        <!-- Debug Menu Diagnostics Console Overlay -->
+        <div id="debug-menu" class="hidden" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 10, 12, 0.95); z-index: 999; display: flex; flex-direction: column; padding: 15px; font-family: 'Share Tech Mono', monospace; border: 4px solid #00ffcc; box-shadow: inset 0 0 20px rgba(0, 255, 204, 0.3), 0 0 30px rgba(0,0,0,0.8); overflow-y: auto;">
+          <!-- Title Bar -->
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px dashed #00ffcc; padding-bottom: 8px; margin-bottom: 12px; flex-shrink: 0;">
+            <span style="color: #00ffcc; font-size: 16px; font-weight: bold; text-shadow: 0 0 8px rgba(0,255,204,0.5); letter-spacing: 1px;">SYSTEM DIAGNOSTICS & CHEATS</span>
+            <span id="debug-fps-counter" style="color: #8c92ac; font-size: 11px;">FPS: -- | SPRITES: -- | PARTICLES: --</span>
+          </div>
+
+          <!-- Main Grid -->
+          <div style="display: grid; grid-template-columns: 1fr 1.1fr; gap: 15px; flex: 1; min-height: 0;">
+            <!-- Column 1: Cheats & Player Stats -->
+            <div style="display: flex; flex-direction: column; gap: 10px; background: rgba(28, 29, 36, 0.5); border: 1px solid #4a4d5e; padding: 10px; border-radius: 6px; overflow-y: auto;">
+              <div style="color: #ffd700; font-size: 12px; font-weight: bold; border-bottom: 1px solid #4a4d5e; padding-bottom: 4px; text-transform: uppercase;">🎮 Diagnostic Cheats & Sound</div>
+              
+              <!-- Volume Sliders -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 11px; color: #a0a5c0; margin-bottom: 5px;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span>SFX VOL:</span>
+                  <input type="range" id="dbg-volume-sfx" min="0" max="1" step="0.1" value="0.35" style="width: 70px; accent-color: #00ffcc;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span>MUS VOL:</span>
+                  <input type="range" id="dbg-volume-music" min="0" max="1" step="0.1" value="0.08" style="width: 70px; accent-color: #00ffcc;">
+                </div>
+              </div>
+
+              <!-- Toggle Cheats -->
+              <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #fff; font-size: 12px;">
+                  <input type="checkbox" id="dbg-godmode" style="accent-color: #00ffcc;"> GOD MODE
+                </label>
+                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #fff; font-size: 12px;">
+                  <input type="checkbox" id="dbg-noclip" style="accent-color: #00ffcc;"> NOCLIP (WALLPASS)
+                </label>
+              </div>
+
+              <div style="color: #ffd700; font-size: 12px; font-weight: bold; border-bottom: 1px solid #4a4d5e; padding-bottom: 4px; text-transform: uppercase; margin-top: 5px;">⚡ Quick Actions</div>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <button class="dbg-btn" id="dbg-btn-fullhp" style="background: #2b542d; border: 1px solid #33ff33; color: #33ff33;">MAX HP</button>
+                <button class="dbg-btn" id="dbg-btn-fullammo" style="background: #5c4033; border: 1px solid #ffd700; color: #ffd700;">MAX AMMO</button>
+                <button class="dbg-btn" id="dbg-btn-shield" style="background: #1f305e; border: 1px solid #33a6ff; color: #33a6ff;">+25 SHIELD</button>
+                <button class="dbg-btn" id="dbg-btn-score" style="background: #4a154b; border: 1px solid #e0a6ff; color: #e0a6ff;">+5K SCORE</button>
+              </div>
+
+              <div style="color: #ffd700; font-size: 12px; font-weight: bold; border-bottom: 1px solid #4a4d5e; padding-bottom: 4px; text-transform: uppercase; margin-top: 5px;">👾 Spawners & Level</div>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <button class="dbg-btn" id="dbg-btn-spawnenemy" style="background: #800; border: 1px solid #ff3333; color: #ff3333;">SPAWN GUARD</button>
+                <button class="dbg-btn" id="dbg-btn-spawnmed" style="background: #222; border: 1px solid #33ff33; color: #33ff33;">SPAWN MED</button>
+                <button class="dbg-btn" id="dbg-btn-spawnammo" style="background: #222; border: 1px solid #ffd700; color: #ffd700;">SPAWN AMMO</button>
+                <button class="dbg-btn" id="dbg-btn-revealmap" style="background: #111; border: 1px solid #00ffcc; color: #00ffcc;">REVEAL MAP</button>
+                <button class="dbg-btn" id="dbg-btn-clearfloor" style="background: #ffd700; border: 1px solid #000; color: #000;">CLEAR FLOOR</button>
+              </div>
+
+              <div style="color: #ffd700; font-size: 12px; font-weight: bold; border-bottom: 1px solid #4a4d5e; padding-bottom: 4px; text-transform: uppercase; margin-top: 5px;">🛠️ Custom Player Setup</div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; color: #a0a5c0;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span>HP:</span>
+                  <input type="number" id="dbg-input-hp" style="width: 55px; background: #111; border: 1px solid #4a4d5e; color: #fff; font-family: monospace; font-size: 11px; padding: 2px;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span>AMMO:</span>
+                  <input type="number" id="dbg-input-ammo" style="width: 55px; background: #111; border: 1px solid #4a4d5e; color: #fff; font-family: monospace; font-size: 11px; padding: 2px;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span>SHIELD:</span>
+                  <input type="number" id="dbg-input-shield" style="width: 55px; background: #111; border: 1px solid #4a4d5e; color: #fff; font-family: monospace; font-size: 11px; padding: 2px;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span>FLOOR:</span>
+                  <input type="number" id="dbg-input-floor" style="width: 55px; background: #111; border: 1px solid #4a4d5e; color: #fff; font-family: monospace; font-size: 11px; padding: 2px;">
+                </div>
+              </div>
+            </div>
+
+            <!-- Column 2: Upgrades Editor -->
+            <div style="display: flex; flex-direction: column; background: rgba(28, 29, 36, 0.5); border: 1px solid #4a4d5e; padding: 10px; border-radius: 6px; min-height: 0;">
+              <div style="color: #ffd700; font-size: 12px; font-weight: bold; border-bottom: 1px solid #4a4d5e; padding-bottom: 4px; text-transform: uppercase; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+                <span>📦 UPGRADE STACK EDITOR</span>
+                <button id="dbg-btn-reset-upgrades" style="background: rgba(255, 51, 51, 0.15); border: 1px solid #ff3333; color: #ff3333; font-size: 9px; padding: 2px 6px; cursor: pointer; border-radius: 2px; font-family: monospace;">RESET ALL</button>
+              </div>
+              <div id="dbg-upgrades-list" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 4px;">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dynamic Overlay Menu screens -->
+        
+        <!-- Start Game Screen -->
+        <div id="start-screen" class="screen-overlay">
+          <h1 class="menu-title">Grave Escape 3D</h1>
+          <h3 class="menu-subtitle">Endless Roguelike Raycaster</h3>
+          <p class="menu-desc">
+            Venture deep into the procedurally generated military catacombs. Find weapon upgrades, defeat guards, and escape down the elevator shaft to descended floors.
+          </p>
+
+          <!-- Leaderboard UI on Start Screen -->
+          <div class="leaderboard-container">
+            <div class="leaderboard-tabs">
+              <button class="leaderboard-tab active" data-tab="local">Local Top 5</button>
+              <button class="leaderboard-tab" data-tab="global">Global Top 10</button>
+            </div>
+            <div class="leaderboard-content">
+              <table id="start-leaderboard-table" class="leaderboard-table hidden">
+                <thead>
+                  <tr>
+                    <th>RANK</th>
+                    <th>NAME</th>
+                    <th>SCORE</th>
+                    <th>FLOOR</th>
+                    <th>KILLS</th>
+                    <th>DATE</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+              <div id="start-leaderboard-empty" class="leaderboard-empty">NO RUNS DETECTED YET.</div>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 20px; font-size: 11px; color: #ffd700; text-align: left; display: inline-block;">
+            🎮 <strong>Controls:</strong><br>
+            • Move: <b style="color:#fff">W, A, S, D</b> or <b style="color:#fff">Arrow Keys</b><br>
+            • Look: <b style="color:#fff">Mouse</b> (Click viewport to lock) or <b style="color:#fff">Q / E</b> keys<br>
+            • Shoot: <b style="color:#fff">Left Click</b> or <b style="color:#fff">Spacebar</b><br>
+            • Switch Weapon: <b style="color:#fff">1, 2, 3</b> or <b style="color:#fff">Scroll Wheel</b>
+          </div>
+          <button id="btn-start" class="btn">Enter the Graves</button>
+        </div>
+
+        <!-- Floor Completed Transition Screen -->
+        <div id="floor-screen" class="screen-overlay hidden" style="padding: 20px;">
+          <h1 class="menu-title" style="color:var(--secondary-color); text-shadow: 4px 4px 0px #004d00, 0 0 20px rgba(51, 255, 51, 0.4); font-size: 24px; margin-bottom: 5px;">Floor Cleared</h1>
+          <h3 id="floor-transition-title" class="menu-subtitle" style="font-size: 12px; margin-bottom: 20px; letter-spacing: 2px;">Descending to Level 2</h3>
+          
+          <div id="upgrade-draft-title" style="font-family:'Press Start 2P'; font-size: 10px; margin-bottom: 12px; color:#ffd700;">DRAFT AN UPGRADE BOOST:</div>
+          <div id="upgrade-draft-container" style="display: flex; gap: 12px; margin-bottom: 20px; width: 100%; justify-content: center;">
+            <!-- 3 card elements dynamically inserted here -->
+          </div>
+
+          <p id="floor-stats" class="menu-desc" style="font-family: 'Press Start 2P'; font-size: 8px; color:#33ff33; line-height: 1.6; margin-bottom: 15px; max-width: 700px; height: 75px; overflow-y: auto;">
+            Enemies Killed: 0 / 0<br>
+            Treasure Found: 0<br>
+            Survival Bonus: +50 Ammo
+          </p>
+          <button id="btn-next-floor" class="btn hidden" style="background: linear-gradient(180deg, #33ff33 0%, #00b300 100%); box-shadow: 0 6px 0 #006600; font-size: 12px; padding: 10px 20px;">Descend Deeper</button>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="gameover-screen" class="screen-overlay hidden">
+          <h1 class="menu-title">Wasted!</h1>
+          <h3 class="menu-subtitle" style="color:#a00; margin-bottom: 15px;">You Died in the Catacombs</h3>
+
+          <!-- High Score Initials Input Dialog -->
+          <div id="leaderboard-prompt" class="arcade-input-dialog hidden">
+            <div class="arcade-input-title">NEW HIGH SCORE!<br>ENTER YOUR ARCADE INITIALS:</div>
+            <input type="text" id="arcade-name-input" class="arcade-input-box" maxlength="3" placeholder="AAA" autofocus>
+            <button id="btn-submit-score" class="btn">SUBMIT</button>
+          </div>
+          
+          <p id="gameover-stats" class="menu-desc" style="font-family: 'Press Start 2P'; font-size: 11px; line-height: 2;">
+            Floor Reached: Floor 1<br>
+            Final Score: 0<br>
+            Hostiles Eliminated: 0
+          </p>
+
+          <!-- Leaderboard UI on Game Over Screen -->
+          <div class="leaderboard-container">
+            <div class="leaderboard-tabs">
+              <button class="leaderboard-tab active" data-tab="local">Local Top 5</button>
+              <button class="leaderboard-tab" data-tab="global">Global Top 10</button>
+            </div>
+            <div class="leaderboard-content">
+              <table id="gameover-leaderboard-table" class="leaderboard-table hidden">
+                <thead>
+                  <tr>
+                    <th>RANK</th>
+                    <th>NAME</th>
+                    <th>SCORE</th>
+                    <th>FLOOR</th>
+                    <th>KILLS</th>
+                    <th>DATE</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+              <div id="gameover-leaderboard-empty" class="leaderboard-empty">NO RUNS DETECTED YET.</div>
+            </div>
+          </div>
+
+          <button id="btn-restart" class="btn" style="margin-top: 10px;">Respawn</button>
+        </div>
+      </div>
+
+      <!-- Mobile D-pad and Action Buttons Overlays -->
+      <div id="mobile-controls">
+        <!-- D-Pad (Left side) -->
+        <div id="dpad">
+          <div id="dpad-up" class="touch-btn dpad-btn">▲</div>
+          <div id="dpad-down" class="touch-btn dpad-btn">▼</div>
+          <div id="dpad-left" class="touch-btn dpad-btn">◀</div>
+          <div id="dpad-right" class="touch-btn dpad-btn">▶</div>
+        </div>
+        <!-- Attack/Weapon pads (Right side) -->
+        <div id="action-pad">
+          <div id="btn-weapon" class="touch-btn">♻</div>
+          <div id="btn-shoot" class="touch-btn">FIRE</div>
+        </div>
+      </div>
+
+      <!-- Retro Bottom HUD -->
+      <div id="hud">
+        <!-- Floor Status -->
+        <div class="hud-panel">
+          <div class="hud-title">FLOOR</div>
+          <div id="hud-floor" class="hud-value">1</div>
+        </div>
+
+        <!-- Health Status -->
+        <div class="hud-panel">
+          <div class="hud-title">HEALTH</div>
+          <div id="hud-health" class="hud-value">100%</div>
+        </div>
+
+        <!-- Face Portrait -->
+        <div id="portrait-panel" class="hud-panel" style="padding: 0;">
+          <canvas id="portrait-canvas" width="64" height="64"></canvas>
+        </div>
+
+        <!-- Ammo Status -->
+        <div class="hud-panel">
+          <div class="hud-title">AMMO</div>
+          <div id="hud-ammo" class="hud-value">100</div>
+        </div>
+
+        <!-- Score Status -->
+        <div class="hud-panel">
+          <div class="hud-title">SCORE</div>
+          <div id="hud-score" class="hud-value">000000</div>
+          <!-- Weapon LED Indicators -->
+          <div class="hud-weapon">
+            <span class="hud-title" style="margin: 0 4px 0 0; font-size: 7px;">WEAPON</span>
+            <div id="weap-dot-1" class="weap-dot active" title="Pistol"></div>
+            <div id="weap-dot-2" class="weap-dot" title="Shotgun"></div>
+            <div id="weap-dot-3" class="weap-dot" title="Minigun"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Entry Script for ES Modules -->
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

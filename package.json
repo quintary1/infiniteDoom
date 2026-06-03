@@ -1,0 +1,12 @@
+{
+  "name": "grave-escape-3d",
+  "version": "1.0.0",
+  "description": "Retro Roguelike Raycaster Shooter in 3D",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "npx -y serve .",
+    "dev": "npx -y serve ."
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
