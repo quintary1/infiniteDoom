@@ -9,6 +9,7 @@ import { generateFloor } from './map.js';
 import { SoundEngine } from './audio.js';
 import { handleShoot } from './combat.js';
 import { toggleSettingsMenu, toggleDebugMenu, DebugCheats } from './settings.js';
+import { saveLocalScore, submitGlobalScore } from './leaderboard.js';
 
 export let mouseSensitivity = 0.0025;
 
