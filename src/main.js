@@ -345,10 +345,9 @@ function handleShoot() {
           const pushY = (nearestTarget.y - Player.y) / minTargetDist * force;
           const newX = nearestTarget.x + pushX;
           const newY = nearestTarget.y + pushY;
-          if (map[Math.floor(newY)] && map[Math.floor(newY)][Math.floor(newX)] === 0) {
-            nearestTarget.x = newX;
-            nearestTarget.y = newY;
-          }
+          const finalPos = checkCollisions(nearestTarget, newX, newY, false, 0.22);
+          nearestTarget.x = finalPos.x;
+          nearestTarget.y = finalPos.y;
         }
         
         if (nearestTarget.health <= 0) {
@@ -465,10 +464,9 @@ function handleShoot() {
         const pushY = (nearestTarget.y - Player.y) / minTargetDist * force;
         const newX = nearestTarget.x + pushX;
         const newY = nearestTarget.y + pushY;
-        if (map[Math.floor(newY)] && map[Math.floor(newY)][Math.floor(newX)] === 0) {
-          nearestTarget.x = newX;
-          nearestTarget.y = newY;
-        }
+        const finalPos = checkCollisions(nearestTarget, newX, newY, false, 0.22);
+        nearestTarget.x = finalPos.x;
+        nearestTarget.y = finalPos.y;
       }
       
       if (nearestTarget.health <= 0) {
@@ -574,12 +572,9 @@ function handleEnemyAI(dt) {
         const moveX = sprite.x + (dx / dist) * step;
         const moveY = sprite.y + (dy / dist) * step;
         
-        const cellX = Math.floor(moveX);
-        const cellY = Math.floor(moveY);
-        if (map[cellY] && map[cellY][cellX] === 0) {
-          sprite.x = moveX;
-          sprite.y = moveY;
-        }
+        const finalPos = checkCollisions(sprite, moveX, moveY, false, 0.22);
+        sprite.x = finalPos.x;
+        sprite.y = finalPos.y;
       } else {
         sprite.state = 'shoot';
         // Cooldowns depend on subtype
