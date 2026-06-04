@@ -643,3 +643,16 @@ body {
     display: block;
   }
 }
+
+/* Pause & Settings overlay custom styling */
+#secret-gear-icon {
+  user-select: none;
+  pointer-events: auto;
+}
+#secret-gear-icon:hover {
+  color: rgba(51, 255, 51, 0.22) !important;
+}
+#secret-gear-icon:active {
+  transform: scale(0.9) rotate(30deg) !important;
+}
+

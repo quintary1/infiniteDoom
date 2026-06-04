@@ -30,8 +30,54 @@
       <div id="viewport-container">
         <canvas id="gameCanvas" width="320" height="200"></canvas>
 
-        <!-- Debug Toggle Button -->
-        <button id="btn-debug-toggle" style="position: absolute; top: 10px; right: 10px; z-index: 1000; font-family: 'Share Tech Mono', monospace; font-size: 11px; background: rgba(28, 29, 36, 0.85); color: #00ffcc; border: 2px solid #00ffcc; padding: 4px 8px; cursor: pointer; border-radius: 4px; box-shadow: 0 0 8px rgba(0,255,204,0.3); transition: all 0.2s;">🛠️ DEBUG MENU</button>
+        <!-- Settings Toggle Button -->
+        <button id="btn-settings-toggle" style="position: absolute; top: 10px; right: 10px; z-index: 1000; font-family: 'Share Tech Mono', monospace; font-size: 11px; background: rgba(28, 29, 36, 0.85); color: #00ffcc; border: 2px solid #00ffcc; padding: 4px 8px; cursor: pointer; border-radius: 4px; box-shadow: 0 0 8px rgba(0,255,204,0.3); transition: all 0.2s;">⚙️ SETTINGS</button>
+
+        <!-- Settings Menu Pause Overlay -->
+        <div id="settings-menu" class="hidden" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 10, 12, 0.95); z-index: 998; display: flex; flex-direction: column; padding: 20px; font-family: 'Share Tech Mono', monospace; border: 4px solid #33ff33; box-shadow: inset 0 0 20px rgba(51, 255, 51, 0.2), 0 0 30px rgba(0,0,0,0.8); overflow-y: auto;">
+          <!-- Title Bar -->
+          <div style="display: flex; justify-content: center; align-items: center; border-bottom: 2px dashed #33ff33; padding-bottom: 8px; margin-bottom: 15px; flex-shrink: 0;">
+            <span style="color: #33ff33; font-size: 16px; font-weight: bold; text-shadow: 0 0 8px rgba(51,255,51,0.5); letter-spacing: 1px;">⚙️ GAME PAUSED & SETTINGS</span>
+          </div>
+
+          <!-- Settings Main Content -->
+          <div style="display: flex; flex-direction: column; gap: 15px; flex: 1; justify-content: center; max-width: 260px; margin: 0 auto; width: 100%;">
+            <!-- Volume Controls -->
+            <div style="background: rgba(28, 29, 36, 0.6); border: 1px solid #4a4d5e; padding: 12px; border-radius: 6px; display: flex; flex-direction: column; gap: 10px;">
+              <div style="color: #ffd700; font-size: 11px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #4a4d5e; padding-bottom: 4px; text-align: center;">🔊 Audio Settings</div>
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #a0a5c0;">
+                <span>SFX VOL:</span>
+                <input type="range" id="settings-volume-sfx" min="0" max="1" step="0.1" value="0.35" style="width: 100px; accent-color: #33ff33;">
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #a0a5c0;">
+                <span>MUSIC VOL:</span>
+                <input type="range" id="settings-volume-music" min="0" max="1" step="0.1" value="0.08" style="width: 100px; accent-color: #33ff33;">
+              </div>
+            </div>
+
+            <!-- Controls Guide -->
+            <div style="background: rgba(28, 29, 36, 0.6); border: 1px solid #4a4d5e; padding: 12px; border-radius: 6px; display: flex; flex-direction: column; gap: 6px;">
+              <div style="color: #ffd700; font-size: 11px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #4a4d5e; padding-bottom: 4px; text-align: center;">🕹️ Gameplay Guide</div>
+              <div style="font-size: 10px; color: #a0a5c0; line-height: 1.4; display: grid; grid-template-columns: 1.2fr 2fr; gap: 4px;">
+                <span>MOVE:</span><span style="color: #fff;">W / A / S / D</span>
+                <span>STRAFE:</span><span style="color: #fff;">Q / E</span>
+                <span>LOOK:</span><span style="color: #fff;">Mouse (Look)</span>
+                <span>SHOOT:</span><span style="color: #fff;">Left Click / Space</span>
+                <span>WEAPONS:</span><span style="color: #fff;">1 / 2 / 3 / Wheel</span>
+                <span>PAUSE:</span><span style="color: #fff;">ESC</span>
+              </div>
+            </div>
+
+            <!-- Menu Buttons -->
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 5px;">
+              <button class="dbg-btn" id="settings-btn-resume" style="background: #2b542d; border: 1px solid #33ff33; color: #33ff33; font-size: 12px; padding: 8px; width: 100%; cursor: pointer;">RESUME GAME</button>
+              <button class="dbg-btn" id="settings-btn-restart" style="background: #5c2222; border: 1px solid #ff3333; color: #ff3333; font-size: 12px; padding: 8px; width: 100%; cursor: pointer;">RESTART RUN</button>
+            </div>
+          </div>
+
+          <!-- Secret Gear Watermark Icon -->
+          <div id="secret-gear-icon" style="position: absolute; bottom: 15px; right: 15px; font-size: 26px; color: rgba(74, 77, 94, 0.15); cursor: default; transition: all 0.3s; user-select: none;">⚙️</div>
+        </div>
 
         <!-- Debug Menu Diagnostics Console Overlay -->
         <div id="debug-menu" class="hidden" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 10, 12, 0.95); z-index: 999; display: flex; flex-direction: column; padding: 15px; font-family: 'Share Tech Mono', monospace; border: 4px solid #00ffcc; box-shadow: inset 0 0 20px rgba(0, 255, 204, 0.3), 0 0 30px rgba(0,0,0,0.8); overflow-y: auto;">
@@ -45,19 +91,7 @@
           <div style="display: grid; grid-template-columns: 1fr 1.1fr; gap: 15px; flex: 1; min-height: 0;">
             <!-- Column 1: Cheats & Player Stats -->
             <div style="display: flex; flex-direction: column; gap: 10px; background: rgba(28, 29, 36, 0.5); border: 1px solid #4a4d5e; padding: 10px; border-radius: 6px; overflow-y: auto;">
-              <div style="color: #ffd700; font-size: 12px; font-weight: bold; border-bottom: 1px solid #4a4d5e; padding-bottom: 4px; text-transform: uppercase;">🎮 Diagnostic Cheats & Sound</div>
-              
-              <!-- Volume Sliders -->
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 11px; color: #a0a5c0; margin-bottom: 5px;">
-                <div style="display: flex; align-items: center; gap: 6px;">
-                  <span>SFX VOL:</span>
-                  <input type="range" id="dbg-volume-sfx" min="0" max="1" step="0.1" value="0.35" style="width: 70px; accent-color: #00ffcc;">
-                </div>
-                <div style="display: flex; align-items: center; gap: 6px;">
-                  <span>MUS VOL:</span>
-                  <input type="range" id="dbg-volume-music" min="0" max="1" step="0.1" value="0.08" style="width: 70px; accent-color: #00ffcc;">
-                </div>
-              </div>
+              <div style="color: #ffd700; font-size: 12px; font-weight: bold; border-bottom: 1px solid #4a4d5e; padding-bottom: 4px; text-transform: uppercase;">🎮 Diagnostic Cheats</div>
 
               <!-- Toggle Cheats -->
               <div style="display: flex; gap: 15px; flex-wrap: wrap;">
@@ -69,24 +103,28 @@
                 </label>
               </div>
 
-              <div style="color: #ffd700; font-size: 12px; font-weight: bold; border-bottom: 1px solid #4a4d5e; padding-bottom: 4px; text-transform: uppercase; margin-top: 5px;">⚡ Quick Actions</div>
+              <div style="color: #ffd700; font-size: 12px; font-weight: bold; border-bottom: 1px solid #4a4d5e; padding-bottom: 4px; text-transform: uppercase; margin-top: 5px;">⚡ Quick Actions & Keys</div>
               <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                 <button class="dbg-btn" id="dbg-btn-fullhp" style="background: #2b542d; border: 1px solid #33ff33; color: #33ff33;">MAX HP</button>
                 <button class="dbg-btn" id="dbg-btn-fullammo" style="background: #5c4033; border: 1px solid #ffd700; color: #ffd700;">MAX AMMO</button>
                 <button class="dbg-btn" id="dbg-btn-shield" style="background: #1f305e; border: 1px solid #33a6ff; color: #33a6ff;">+25 SHIELD</button>
                 <button class="dbg-btn" id="dbg-btn-score" style="background: #4a154b; border: 1px solid #e0a6ff; color: #e0a6ff;">+5K SCORE</button>
+                <button class="dbg-btn" id="dbg-btn-give-redkey" style="background: #611; border: 1px solid #ff3333; color: #ff3333; font-size: 10px;">🔴 GIVE RED KEY</button>
+                <button class="dbg-btn" id="dbg-btn-give-bluekey" style="background: #116; border: 1px solid #33a6ff; color: #33a6ff; font-size: 10px;">🔵 GIVE BLUE KEY</button>
               </div>
 
               <div style="color: #ffd700; font-size: 12px; font-weight: bold; border-bottom: 1px solid #4a4d5e; padding-bottom: 4px; text-transform: uppercase; margin-top: 5px;">👾 Spawners & Level</div>
               <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                 <button class="dbg-btn" id="dbg-btn-spawnenemy" style="background: #800; border: 1px solid #ff3333; color: #ff3333;">SPAWN GUARD</button>
+                <button class="dbg-btn" id="dbg-btn-spawnghoul" style="background: #404; border: 1px solid #e066ff; color: #e066ff;">SPAWN GHOUL</button>
+                <button class="dbg-btn" id="dbg-btn-spawnheavy" style="background: #620; border: 1px solid #ff9933; color: #ff9933;">SPAWN HEAVY</button>
                 <button class="dbg-btn" id="dbg-btn-spawnmed" style="background: #222; border: 1px solid #33ff33; color: #33ff33;">SPAWN MED</button>
                 <button class="dbg-btn" id="dbg-btn-spawnammo" style="background: #222; border: 1px solid #ffd700; color: #ffd700;">SPAWN AMMO</button>
                 <button class="dbg-btn" id="dbg-btn-revealmap" style="background: #111; border: 1px solid #00ffcc; color: #00ffcc;">REVEAL MAP</button>
                 <button class="dbg-btn" id="dbg-btn-clearfloor" style="background: #ffd700; border: 1px solid #000; color: #000;">CLEAR FLOOR</button>
               </div>
 
-              <div style="color: #ffd700; font-size: 12px; font-weight: bold; border-bottom: 1px solid #4a4d5e; padding-bottom: 4px; text-transform: uppercase; margin-top: 5px;">🛠️ Custom Player Setup</div>
+              <div style="color: #ffd700; font-size: 12px; font-weight: bold; border-bottom: 1px solid #4a4d5e; padding-bottom: 4px; text-transform: uppercase; margin-top: 5px;">🛠️ Custom Player & Map Setup</div>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; color: #a0a5c0;">
                 <div style="display: flex; align-items: center; gap: 6px;">
                   <span>HP:</span>
@@ -103,6 +141,14 @@
                 <div style="display: flex; align-items: center; gap: 6px;">
                   <span>FLOOR:</span>
                   <input type="number" id="dbg-input-floor" style="width: 55px; background: #111; border: 1px solid #4a4d5e; color: #fff; font-family: monospace; font-size: 11px; padding: 2px;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span>MAP W:</span>
+                  <input type="number" id="dbg-input-mapw" min="20" max="40" placeholder="Auto" style="width: 55px; background: #111; border: 1px solid #4a4d5e; color: #fff; font-family: monospace; font-size: 11px; padding: 2px;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span>MAP H:</span>
+                  <input type="number" id="dbg-input-maph" min="20" max="40" placeholder="Auto" style="width: 55px; background: #111; border: 1px solid #4a4d5e; color: #fff; font-family: monospace; font-size: 11px; padding: 2px;">
                 </div>
               </div>
             </div>

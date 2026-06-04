@@ -31,7 +31,9 @@ import {
 // Debug Cheats State
 export const DebugCheats = {
   godMode: false,
-  noclip: false
+  noclip: false,
+  customWidth: 0,
+  customHeight: 0
 };
 
 // Player Object
@@ -1148,34 +1150,37 @@ function rotateCamera(angle) {
 function setupControls() {
   canvas.addEventListener('click', () => {
     const isDebugVisible = !document.getElementById('debug-menu').classList.contains('hidden');
-    if (activeScreen === 'game' && !isDebugVisible) {
+    const isSettingsVisible = !document.getElementById('settings-menu').classList.contains('hidden');
+    if (activeScreen === 'game' && !isDebugVisible && !isSettingsVisible) {
       canvas.requestPointerLock();
     }
   });
 
   document.addEventListener('mousemove', (e) => {
     const isDebugVisible = !document.getElementById('debug-menu').classList.contains('hidden');
-    if (document.pointerLockElement === canvas && activeScreen === 'game' && !isDebugVisible) {
+    const isSettingsVisible = !document.getElementById('settings-menu').classList.contains('hidden');
+    if (document.pointerLockElement === canvas && activeScreen === 'game' && !isDebugVisible && !isSettingsVisible) {
       rotateCamera(e.movementX * mouseSensitivity);
     }
   });
 
   window.addEventListener('keydown', (e) => {
     const isDebugVisible = !document.getElementById('debug-menu').classList.contains('hidden');
+    const isSettingsVisible = !document.getElementById('settings-menu').classList.contains('hidden');
     
-    if (e.key === '`' || e.key === '~' || e.key === 'Escape') {
-      if (e.key === 'Escape' && isDebugVisible) {
+    if (e.key === 'Escape') {
+      if (isDebugVisible) {
         toggleDebugMenu();
         e.preventDefault();
         return;
-      } else if (e.key === '`' || e.key === '~') {
-        toggleDebugMenu();
+      } else {
+        toggleSettingsMenu();
         e.preventDefault();
         return;
       }
     }
 
-    if (isDebugVisible) return;
+    if (isDebugVisible || isSettingsVisible) return;
 
     const key = e.key.toLowerCase();
     
@@ -1209,7 +1214,8 @@ function setupControls() {
 
   window.addEventListener('wheel', (e) => {
     const isDebugVisible = !document.getElementById('debug-menu').classList.contains('hidden');
-    if (activeScreen !== 'game' || isDebugVisible) return;
+    const isSettingsVisible = !document.getElementById('settings-menu').classList.contains('hidden');
+    if (activeScreen !== 'game' || isDebugVisible || isSettingsVisible) return;
     if (e.deltaY > 0) {
       Player.currentWeapon = (Player.currentWeapon + 1) % Weapons.length;
     } else {
@@ -1220,7 +1226,8 @@ function setupControls() {
 
   canvas.addEventListener('mousedown', (e) => {
     const isDebugVisible = !document.getElementById('debug-menu').classList.contains('hidden');
-    if (e.button === 0 && activeScreen === 'game' && !isDebugVisible) {
+    const isSettingsVisible = !document.getElementById('settings-menu').classList.contains('hidden');
+    if (e.button === 0 && activeScreen === 'game' && !isDebugVisible && !isSettingsVisible) {
       handleShoot();
     }
   });
@@ -1231,7 +1238,7 @@ function setupControls() {
     SoundEngine.play('click');
     SoundEngine.startMusic();
     Player.reset();
-    generateFloor(Player);
+    generateFloor(Player, DebugCheats.customWidth, DebugCheats.customHeight);
     showScreen('game-screen');
     activeScreen = 'game';
     canvas.requestPointerLock?.();
@@ -1240,7 +1247,7 @@ function setupControls() {
   document.getElementById('btn-next-floor').addEventListener('click', () => {
     SoundEngine.play('click');
     Player.floor++;
-    generateFloor(Player);
+    generateFloor(Player, DebugCheats.customWidth, DebugCheats.customHeight);
     showScreen('game-screen');
     activeScreen = 'game';
     canvas.requestPointerLock?.();
@@ -1250,7 +1257,24 @@ function setupControls() {
     SoundEngine.play('click');
     SoundEngine.startMusic();
     Player.reset();
-    generateFloor(Player);
+    generateFloor(Player, DebugCheats.customWidth, DebugCheats.customHeight);
+    showScreen('game-screen');
+    activeScreen = 'game';
+    canvas.requestPointerLock?.();
+  });
+
+  // Settings Menu Buttons Bindings
+  document.getElementById('settings-btn-resume').addEventListener('click', () => {
+    toggleSettingsMenu();
+    SoundEngine.play('click');
+  });
+
+  document.getElementById('settings-btn-restart').addEventListener('click', () => {
+    toggleSettingsMenu();
+    SoundEngine.play('click');
+    SoundEngine.startMusic();
+    Player.reset();
+    generateFloor(Player, DebugCheats.customWidth, DebugCheats.customHeight);
     showScreen('game-screen');
     activeScreen = 'game';
     canvas.requestPointerLock?.();
@@ -1346,11 +1370,38 @@ function setupTouchCameraLook() {
 // =========================================================================
 // SYSTEM DIAGNOSTICS & CHEATS CORE CONTROL
 // =========================================================================
+function toggleSettingsMenu() {
+  const settingsMenu = document.getElementById('settings-menu');
+  if (!settingsMenu) return;
+  const isHidden = settingsMenu.classList.contains('hidden');
+  if (isHidden) {
+    // Hide debug menu if open
+    document.getElementById('debug-menu')?.classList.add('hidden');
+    settingsMenu.classList.remove('hidden');
+    syncSettingsVolumeInputs();
+    document.exitPointerLock?.();
+  } else {
+    settingsMenu.classList.add('hidden');
+    if (activeScreen === 'game') {
+      canvas.requestPointerLock?.();
+    }
+  }
+}
+
+function syncSettingsVolumeInputs() {
+  const sfxSlider = document.getElementById('settings-volume-sfx');
+  const musicSlider = document.getElementById('settings-volume-music');
+  if (sfxSlider) sfxSlider.value = SoundEngine.sfxVolume;
+  if (musicSlider) musicSlider.value = SoundEngine.musicVolume;
+}
+
 function toggleDebugMenu() {
   const menu = document.getElementById('debug-menu');
   if (!menu) return;
   const isHidden = menu.classList.contains('hidden');
   if (isHidden) {
+    // Hide settings menu if open
+    document.getElementById('settings-menu')?.classList.add('hidden');
     menu.classList.remove('hidden');
     populateDebugUpgrades();
     syncDebugInputs();
@@ -1428,11 +1479,15 @@ function syncDebugInputs() {
   const ammoInput = document.getElementById('dbg-input-ammo');
   const shieldInput = document.getElementById('dbg-input-shield');
   const floorInput = document.getElementById('dbg-input-floor');
+  const mapWInput = document.getElementById('dbg-input-mapw');
+  const mapHInput = document.getElementById('dbg-input-maph');
 
   if (document.activeElement !== hpInput && hpInput) hpInput.value = Player.health;
   if (document.activeElement !== ammoInput && ammoInput) ammoInput.value = Player.ammo;
   if (document.activeElement !== shieldInput && shieldInput) shieldInput.value = Player.shield;
   if (document.activeElement !== floorInput && floorInput) floorInput.value = Player.floor;
+  if (document.activeElement !== mapWInput && mapWInput) mapWInput.value = DebugCheats.customWidth || '';
+  if (document.activeElement !== mapHInput && mapHInput) mapHInput.value = DebugCheats.customHeight || '';
 }
 
 function updateDebugDiagnostics(dt) {
@@ -1446,11 +1501,41 @@ function updateDebugDiagnostics(dt) {
 }
 
 function setupDebugMenu() {
-  document.getElementById('btn-debug-toggle').addEventListener('click', (e) => {
+  // Settings toggle button
+  document.getElementById('btn-settings-toggle').addEventListener('click', (e) => {
     e.stopPropagation();
-    toggleDebugMenu();
+    toggleSettingsMenu();
   });
 
+  // Secret gear click mechanism (5 clicks triggers debug menu)
+  let gearClickCount = 0;
+  document.getElementById('secret-gear-icon').addEventListener('click', (e) => {
+    e.stopPropagation();
+    gearClickCount++;
+    if (gearClickCount >= 5) {
+      gearClickCount = 0;
+      SoundEngine.play('elevator');
+      showHudFlashMessage("DEVELOPER DIAGNOSTICS UNLOCKED");
+      toggleDebugMenu();
+    } else {
+      SoundEngine.play('click');
+    }
+  });
+
+  // Settings menu volume bindings
+  document.getElementById('settings-volume-sfx').addEventListener('input', (e) => {
+    SoundEngine.setVolume(parseFloat(e.target.value), SoundEngine.musicVolume);
+  });
+  document.getElementById('settings-volume-music').addEventListener('input', (e) => {
+    const nextVol = parseFloat(e.target.value);
+    const wasMuted = SoundEngine.musicVolume <= 0.001;
+    SoundEngine.setVolume(SoundEngine.sfxVolume, nextVol);
+    if (wasMuted && nextVol > 0.001 && activeScreen === 'game') {
+      SoundEngine.startMusic();
+    }
+  });
+
+  // Toggle debug cheats
   document.getElementById('dbg-godmode').addEventListener('change', (e) => {
     DebugCheats.godMode = e.target.checked;
   });
@@ -1458,6 +1543,7 @@ function setupDebugMenu() {
     DebugCheats.noclip = e.target.checked;
   });
 
+  // Quick Action cheats
   document.getElementById('dbg-btn-fullhp').addEventListener('click', () => {
     Player.health = Player.maxHealth;
     syncDebugInputs();
@@ -1478,26 +1564,82 @@ function setupDebugMenu() {
     Player.score += 5000;
     SoundEngine.play('pickup_item');
   });
-  document.getElementById('dbg-btn-reset-upgrades').addEventListener('click', () => {
-    UPGRADE_POOL.forEach(up => {
-      Player.upgrades[up.id] = 0;
-      updateUpgradeCountDisplay(up.id);
-    });
-    SoundEngine.play('hurt');
+
+  // Give keycards cheats
+  document.getElementById('dbg-btn-give-redkey').addEventListener('click', () => {
+    Player.hasRedKey = true;
+    updateHUD();
+    SoundEngine.play('pickup_item');
+    showHudFlashMessage("CHEATED RED KEYCARD");
+  });
+  document.getElementById('dbg-btn-give-bluekey').addEventListener('click', () => {
+    Player.hasBlueKey = true;
+    updateHUD();
+    SoundEngine.play('pickup_item');
+    showHudFlashMessage("CHEATED BLUE KEYCARD");
   });
 
-  document.getElementById('dbg-btn-clearfloor').addEventListener('click', () => {
-    toggleDebugMenu();
-    handleFloorComplete();
+  // Spawners & Level controls
+  document.getElementById('dbg-btn-spawnenemy').addEventListener('click', () => {
+    sprites.push({
+      type: 'enemy',
+      subtype: 'guard',
+      x: Player.x + Player.dirX * 1.5,
+      y: Player.y + Player.dirY * 1.5,
+      health: 50 + Player.floor * 15,
+      maxHp: 50 + Player.floor * 15,
+      state: 'chase',
+      speed: 1.2 + Math.min(Player.floor * 0.15, 1.2),
+      shootCooldown: 0,
+      animTimer: 0,
+      animFrame: 0,
+      texture: 7,
+      solid: true
+    });
+    Player.maxKills++;
+    SoundEngine.play('enemy_alert');
   });
-  document.getElementById('dbg-btn-revealmap').addEventListener('click', () => {
-    if (visitedMap && visitedMap.length > 0) {
-      for (let y = 0; y < MapHeight; y++) {
-        visitedMap[y].fill(true);
-      }
-      SoundEngine.play('pickup_item');
-    }
+
+  document.getElementById('dbg-btn-spawnghoul').addEventListener('click', () => {
+    sprites.push({
+      type: 'enemy',
+      subtype: 'ghoul',
+      x: Player.x + Player.dirX * 1.5,
+      y: Player.y + Player.dirY * 1.5,
+      health: 30 + Player.floor * 8,
+      maxHp: 30 + Player.floor * 8,
+      state: 'chase',
+      speed: 1.9 + Player.floor * 0.1,
+      shootCooldown: 0,
+      animTimer: 0,
+      animFrame: 0,
+      texture: 19,
+      solid: true
+    });
+    Player.maxKills++;
+    SoundEngine.play('enemy_alert');
   });
+
+  document.getElementById('dbg-btn-spawnheavy').addEventListener('click', () => {
+    sprites.push({
+      type: 'enemy',
+      subtype: 'heavy',
+      x: Player.x + Player.dirX * 1.5,
+      y: Player.y + Player.dirY * 1.5,
+      health: 130 + Player.floor * 30,
+      maxHp: 130 + Player.floor * 30,
+      state: 'chase',
+      speed: 0.8,
+      shootCooldown: 0,
+      animTimer: 0,
+      animFrame: 0,
+      texture: 24,
+      solid: true
+    });
+    Player.maxKills++;
+    SoundEngine.play('enemy_alert');
+  });
+
   document.getElementById('dbg-btn-spawnmed').addEventListener('click', () => {
     sprites.push({
       type: 'medkit',
@@ -1508,6 +1650,7 @@ function setupDebugMenu() {
     });
     SoundEngine.play('pickup_item');
   });
+  
   document.getElementById('dbg-btn-spawnammo').addEventListener('click', () => {
     sprites.push({
       type: 'ammo',
@@ -1518,38 +1661,30 @@ function setupDebugMenu() {
     });
     SoundEngine.play('pickup_item');
   });
-  document.getElementById('dbg-btn-spawnenemy').addEventListener('click', () => {
-    sprites.push({
-      type: 'enemy',
-      x: Player.x + Player.dirX * 1.5,
-      y: Player.y + Player.dirY * 1.5,
-      health: 50 + Player.floor * 15,
-      maxHp: 50 + Player.floor * 15,
-      state: 'idle',
-      speed: 1.2 + Math.min(Player.floor * 0.15, 1.2),
-      shootCooldown: 0,
-      animTimer: 0,
-      animFrame: 0,
-      solid: true
-    });
-    Player.maxKills++;
-    SoundEngine.play('enemy_alert');
-  });
 
-  // Slider bindings
-  document.getElementById('dbg-volume-sfx').addEventListener('input', (e) => {
-    SoundEngine.setVolume(parseFloat(e.target.value), SoundEngine.musicVolume);
-  });
-  document.getElementById('dbg-volume-music').addEventListener('input', (e) => {
-    const nextVol = parseFloat(e.target.value);
-    const wasMuted = SoundEngine.musicVolume <= 0.001;
-    SoundEngine.setVolume(SoundEngine.sfxVolume, nextVol);
-    
-    if (wasMuted && nextVol > 0.001 && activeScreen === 'game') {
-      SoundEngine.startMusic();
+  document.getElementById('dbg-btn-revealmap').addEventListener('click', () => {
+    if (visitedMap && visitedMap.length > 0) {
+      for (let y = 0; y < MapHeight; y++) {
+        visitedMap[y].fill(true);
+      }
+      SoundEngine.play('pickup_item');
     }
   });
 
+  document.getElementById('dbg-btn-clearfloor').addEventListener('click', () => {
+    toggleDebugMenu();
+    handleFloorComplete();
+  });
+
+  document.getElementById('dbg-btn-reset-upgrades').addEventListener('click', () => {
+    UPGRADE_POOL.forEach(up => {
+      Player.upgrades[up.id] = 0;
+      updateUpgradeCountDisplay(up.id);
+    });
+    SoundEngine.play('hurt');
+  });
+
+  // Custom player/map inputs
   document.getElementById('dbg-input-hp').addEventListener('input', (e) => {
     const val = parseInt(e.target.value);
     if (!isNaN(val)) Player.health = Math.max(0, val);
@@ -1568,6 +1703,12 @@ function setupDebugMenu() {
   document.getElementById('dbg-input-floor').addEventListener('input', (e) => {
     const val = parseInt(e.target.value);
     if (!isNaN(val)) Player.floor = Math.max(1, val);
+  });
+  document.getElementById('dbg-input-mapw').addEventListener('input', (e) => {
+    DebugCheats.customWidth = parseInt(e.target.value) || 0;
+  });
+  document.getElementById('dbg-input-maph').addEventListener('input', (e) => {
+    DebugCheats.customHeight = parseInt(e.target.value) || 0;
   });
 }
 

@@ -40,10 +40,10 @@ function rectsOverlap(r1, r2) {
          r1.y + r1.h > r2.y;
 }
 
-export function generateFloor(player) {
-  // Randomize map dimensions between 20 and 40
-  MapWidth = 20 + Math.floor(Math.random() * 21);
-  MapHeight = 20 + Math.floor(Math.random() * 21);
+export function generateFloor(player, customWidth = 0, customHeight = 0) {
+  // Randomize map dimensions between 20 and 40, unless overridden by debug cheats
+  MapWidth = (customWidth >= 20 && customWidth <= 40) ? customWidth : 20 + Math.floor(Math.random() * 21);
+  MapHeight = (customHeight >= 20 && customHeight <= 40) ? customHeight : 20 + Math.floor(Math.random() * 21);
 
   // 1. Build blank solid map
   map = [];
