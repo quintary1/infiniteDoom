@@ -13,6 +13,12 @@ let screenWidth = 320;
 let screenHeight = 200;
 let ZBuffer = [];
 
+// Offscreen canvas for shading sprites while maintaining transparency
+const spriteBufferCanvas = document.createElement('canvas');
+spriteBufferCanvas.width = TILE_SIZE;
+spriteBufferCanvas.height = TILE_SIZE;
+const spriteBufferCtx = spriteBufferCanvas.getContext('2d');
+
 export function initRaycaster(gameCanvas) {
   canvas = gameCanvas;
   ctx = canvas.getContext('2d', { alpha: false });
@@ -216,6 +222,23 @@ export function render3D(player, weapons, keys) {
     // If behind player, don't draw
     if (transformY <= 0.05) return;
 
+    // Draw the sprite onto the offscreen buffer and apply fog to non-transparent pixels
+    spriteBufferCtx.clearRect(0, 0, TILE_SIZE, TILE_SIZE);
+    spriteBufferCtx.drawImage(
+      texturesCanvas,
+      texNum * TILE_SIZE, 0, TILE_SIZE, TILE_SIZE,
+      0, 0, TILE_SIZE, TILE_SIZE
+    );
+
+    const maxFogDist = 12.0;
+    const opacity = Math.min(1.0, transformY / maxFogDist);
+    if (opacity > 0) {
+      spriteBufferCtx.globalCompositeOperation = 'source-atop';
+      spriteBufferCtx.fillStyle = `rgba(10,10,12,${opacity})`;
+      spriteBufferCtx.fillRect(0, 0, TILE_SIZE, TILE_SIZE);
+      spriteBufferCtx.globalCompositeOperation = 'source-over';
+    }
+
     // Screen projection details
     const spriteScreenX = Math.floor((screenWidth / 2) * (1 + transformX / transformY));
     const spriteHeight = Math.abs(Math.floor(screenHeight / transformY));
@@ -231,21 +254,13 @@ export function render3D(player, weapons, keys) {
     for (let stripe = Math.max(0, drawStartX); stripe < Math.min(screenWidth, drawEndX); stripe++) {
       if (transformY < ZBuffer[stripe]) {
         const texX = Math.floor(256 * (stripe - (-spriteWidth / 2 + spriteScreenX)) * TILE_SIZE / spriteWidth) / 256;
-        const srcX = (texNum * TILE_SIZE) + Math.max(0, Math.min(TILE_SIZE - 1, texX));
+        const srcX = Math.max(0, Math.min(TILE_SIZE - 1, texX));
 
         ctx.drawImage(
-          texturesCanvas,
+          spriteBufferCanvas,
           srcX, 0, 1, TILE_SIZE,
           stripe, drawStartY, 1, drawEndY - drawStartY
         );
-
-        // Shading overlay
-        const maxFogDist = 12.0;
-        const opacity = Math.min(1.0, transformY / maxFogDist);
-        if (opacity > 0) {
-          ctx.fillStyle = `rgba(10,10,12,${opacity})`;
-          ctx.fillRect(stripe, drawStartY, 1, drawEndY - drawStartY);
-        }
       }
     }
   });
