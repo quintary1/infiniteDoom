@@ -346,7 +346,7 @@ export function generateFloor(player, customWidth = 0, customHeight = 0) {
           texStart = 19;
         } else if (enemyRoll > 0.75) {
           subtype = 'heavy';
-          health = 90 + player.floor * 15;
+          health = 130 + player.floor * 30;
           maxHp = health;
           speed = 0.8;
           texStart = 24;
