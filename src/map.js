@@ -249,10 +249,10 @@ export function generateFloor(player, customWidth = 0, customHeight = 0) {
     }
   }
 
-  // Filter which rooms are accessible to the player
+  // Filter which rooms are accessible to the player, excluding the starting room (index 0)
   const reachableRoomIndices = [];
   rooms.forEach((r, idx) => {
-    if (reachable[r.cy][r.cx]) {
+    if (idx > 0 && reachable[r.cy][r.cx]) {
       reachableRoomIndices.push(idx);
     }
   });
@@ -262,10 +262,8 @@ export function generateFloor(player, customWidth = 0, customHeight = 0) {
     reachableRoomIndices.push(0);
   }
 
-  // Place Red Keycard in a random reachable room (preferring index > 0 for exploration)
-  const redKeyIndex = reachableRoomIndices.length > 1 
-    ? reachableRoomIndices[1 + Math.floor(Math.random() * (reachableRoomIndices.length - 1))] 
-    : 0;
+  // Place Red Keycard in a random reachable room
+  const redKeyIndex = reachableRoomIndices[Math.floor(Math.random() * reachableRoomIndices.length)];
   const redKeyRoom = rooms[redKeyIndex];
   sprites.push({ type: 'key_red', x: redKeyRoom.cx, y: redKeyRoom.cy, texture: 17 });
 
@@ -273,7 +271,7 @@ export function generateFloor(player, customWidth = 0, customHeight = 0) {
   const availableBlueIndices = reachableRoomIndices.filter(idx => idx !== redKeyIndex);
   const blueKeyIndex = availableBlueIndices.length > 0 
     ? availableBlueIndices[Math.floor(Math.random() * availableBlueIndices.length)] 
-    : 0;
+    : redKeyIndex;
   const blueKeyRoom = rooms[blueKeyIndex];
   sprites.push({ type: 'key_blue', x: blueKeyRoom.cx, y: blueKeyRoom.cy, texture: 18 });
 
