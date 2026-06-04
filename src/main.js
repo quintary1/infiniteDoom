@@ -92,9 +92,9 @@ export const Player = {
 
 // Weapon Profiles
 export const Weapons = [
-  { name: 'Pistol', damage: 35, ammoCost: 1, cooldown: 350, sfx: 'shoot_pistol', scale: 0.5 },
-  { name: 'Shotgun', damage: 100, ammoCost: 2, cooldown: 850, sfx: 'shoot_shotgun', scale: 0.6 },
-  { name: 'Minigun', damage: 25, ammoCost: 1, cooldown: 120, sfx: 'shoot_minigun', scale: 0.7 }
+  { name: 'Pistol', damage: 35, ammoCost: 1, cooldown: 350, sfx: 'shoot_pistol', scale: 0.35 },
+  { name: 'Shotgun', damage: 100, ammoCost: 2, cooldown: 850, sfx: 'shoot_shotgun', scale: 0.44 },
+  { name: 'Minigun', damage: 25, ammoCost: 1, cooldown: 120, sfx: 'shoot_minigun', scale: 0.52 }
 ];
 
 // Keyboard handlers
