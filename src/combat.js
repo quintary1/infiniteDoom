@@ -63,6 +63,14 @@ export function triggerEnemyDeath(enemy) {
 }
 
 export function handleShoot() {
+  if (Player.shootCooldown > 0 || Player.ammo <= 0) {
+    if (Player.ammo <= 0 && Player.shootCooldown <= 0) {
+      SoundEngine.play('click');
+      Player.shootCooldown = 400; // anti-spam empty clicking sfx
+    }
+    return;
+  }
+
   const activeWeap = Weapons[Player.currentWeapon];
   
   let useAmmo = true;
