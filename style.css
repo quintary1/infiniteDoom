@@ -656,3 +656,15 @@ body {
   transform: scale(0.9) rotate(30deg) !important;
 }
 
+/* Hide password manager injected icons/overlays inside the game cabinet layout */
+div[data-lastpass-icon-root], 
+div[data-lastpass-infield],
+.com-1password-button,
+div[class*="dashlane"],
+div[data-dashlane-rid] { 
+  display: none !important; 
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
