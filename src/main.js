@@ -586,7 +586,7 @@ function handleEnemyAI(dt) {
         if (sprite.subtype === 'ghoul') {
           sprite.shootCooldown = 300 + Math.random() * 200; // fast ghouls attack rapidly
         } else if (sprite.subtype === 'heavy') {
-          sprite.shootCooldown = 1500; // heavy elite burst triggers
+          sprite.shootCooldown = 2000 + Math.random() * 600; // heavy elite burst delay
         } else {
           sprite.shootCooldown = 600 + Math.random() * 400; // standard guard
         }
@@ -610,32 +610,34 @@ function handleEnemyAI(dt) {
       } 
       // 2. HEAVY ELITE BURST ATTACK
       else if (sprite.subtype === 'heavy') {
-        if (!sprite.burstCount) {
-          sprite.burstCount = 3;
-          sprite.burstTimer = 0;
-        }
-
-        sprite.burstTimer -= dt * 1000;
-        if (sprite.burstTimer <= 0 && sprite.burstCount > 0) {
-          SoundEngine.play('enemy_shoot');
-          spawnSpark(sprite.x, sprite.y, 4, '#ff3333');
-
-          const hitChance = Math.max(0.1, 0.55 - (dist * 0.10));
-          if (Math.random() < hitChance) {
-            let dmg = 4 + Math.floor(Math.random() * 5) + Math.floor(Player.floor * 0.5);
-            dmg *= Math.pow(0.9, Player.upgrades.shield_plating || 0);
-            dmg = Math.floor(dmg);
-
-            applyPlayerDamage(dmg);
+        if (sprite.shootCooldown <= 0) {
+          if (!sprite.burstCount) {
+            sprite.burstCount = 3;
+            sprite.burstTimer = 0;
           }
-          sprite.burstCount--;
-          sprite.burstTimer = 150; // 150ms delay
-        }
 
-        if (sprite.burstCount === 0) {
-          sprite.burstCount = undefined;
-          sprite.state = 'chase';
-          sprite.shootCooldown = 2000 + Math.random() * 600;
+          sprite.burstTimer -= dt * 1000;
+          if (sprite.burstTimer <= 0 && sprite.burstCount > 0) {
+            SoundEngine.play('enemy_shoot');
+            spawnSpark(sprite.x, sprite.y, 4, '#ff3333');
+
+            const hitChance = Math.max(0.1, 0.55 - (dist * 0.10));
+            if (Math.random() < hitChance) {
+              let dmg = 4 + Math.floor(Math.random() * 5) + Math.floor(Player.floor * 0.5);
+              dmg *= Math.pow(0.9, Player.upgrades.shield_plating || 0);
+              dmg = Math.floor(dmg);
+
+              applyPlayerDamage(dmg);
+            }
+            sprite.burstCount--;
+            sprite.burstTimer = 150; // 150ms delay
+          }
+
+          if (sprite.burstCount === 0) {
+            sprite.burstCount = undefined;
+            sprite.state = 'chase';
+            sprite.shootCooldown = 0;
+          }
         }
       } 
       // 3. STANDARD GUARD
