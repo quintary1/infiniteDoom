@@ -57,6 +57,7 @@ export const Player = {
   shootFrame: 0,
   shootCooldown: 0,
   kills: 0,
+  totalKills: 0,
   maxKills: 0,
   treasures: 0,
   upgrades: {},
@@ -79,6 +80,7 @@ export const Player = {
     this.shootFrame = 0;
     this.shootCooldown = 0;
     this.kills = 0;
+    this.totalKills = 0;
     this.maxKills = 0;
     this.treasures = 0;
     this.upgrades = {};
@@ -177,6 +179,7 @@ function triggerEnemyDeath(enemy) {
   enemy.state = 'dead';
   enemy.solid = false;
   Player.kills++;
+  Player.totalKills++;
   Player.score += Math.floor(250 * (1 + 0.20 * (Player.upgrades.magnet || 0)));
   SoundEngine.play('enemy_die');
 
@@ -877,7 +880,8 @@ function handleGameOver() {
     
     normalGameOverStats.innerHTML = `
       FLOORS CLEARED: ${Player.floor - 1}<br>
-      FINAL SCORE: ${Player.score} PTS<br><br>
+      FINAL SCORE: ${Player.score} PTS<br>
+      HOSTILES ELIMINATED: ${Player.totalKills}<br><br>
       <span style="color:var(--primary-color);">REST IN PIECES IN THE CATACOMBS</span>
     `;
   }
@@ -946,7 +950,7 @@ function updateLeaderboardsUI() {
             <td>${s.name}</td>
             <td>${s.score}</td>
             <td>FL ${s.floor}</td>
-            <td>${s.kills} K</td>
+            <td>${s.kills || 0} K</td>
             <td>${s.date}</td>
           `;
           tbody.appendChild(tr);
@@ -969,7 +973,7 @@ function updateLeaderboardsUI() {
             <td>${s.name}</td>
             <td>${s.score}</td>
             <td>FL ${s.floor}</td>
-            <td>${s.kills} K</td>
+            <td>${s.kills || 0} K</td>
             <td>${s.date}</td>
           `;
           tbody.appendChild(tr);
@@ -1320,10 +1324,10 @@ function setupControls() {
     const name = nameInput.value.trim().toUpperCase() || 'AAA';
     
     // Save locally
-    saveLocalScore(name, Player.score, Player.floor, Player.kills);
+    saveLocalScore(name, Player.score, Player.floor, Player.totalKills);
     
     // Stub global submit
-    submitGlobalScore(name, Player.score, Player.floor, Player.kills);
+    submitGlobalScore(name, Player.score, Player.floor, Player.totalKills);
 
     // Refresh UI & switch back to start screen
     updateLeaderboardsUI();
