@@ -329,7 +329,9 @@ export function render3D(player, weapons, keys) {
 function drawMinimap(player) {
   if (!visitedMap || visitedMap.length === 0) return;
 
-  const tileSize = 3;
+  const maxDim = Math.max(MapWidth, MapHeight);
+  const targetSize = 90; // Minimap largest side will be 90px
+  const tileSize = targetSize / maxDim;
   const mapWidthSize = MapWidth * tileSize;
   const mapHeightSize = MapHeight * tileSize;
   const offsetX = 8;
