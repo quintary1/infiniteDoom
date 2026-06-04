@@ -289,81 +289,6 @@ body {
   transition: background-color 0.1s ease;
 }
 
-/* On-Screen / Mobile Controls (Hidden on desktop, shows when touch detected or forced) */
-#mobile-controls {
-  display: none;
-  position: absolute;
-  bottom: 110px;
-  left: 0;
-  width: 100%;
-  height: 160px;
-  z-index: 8;
-  pointer-events: none;
-  padding: 0 20px;
-}
-
-.touch-btn {
-  pointer-events: auto;
-  background-color: rgba(255, 255, 255, 0.15);
-  border: 3px solid rgba(255, 255, 255, 0.4);
-  border-radius: 50%;
-  color: #fff;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-weight: bold;
-  font-size: 20px;
-  touch-action: none;
-}
-
-.touch-btn:active {
-  background-color: rgba(255, 255, 255, 0.4);
-}
-
-#dpad {
-  position: absolute;
-  left: 20px;
-  bottom: 10px;
-  width: 130px;
-  height: 130px;
-  pointer-events: none;
-}
-
-.dpad-btn {
-  position: absolute;
-  width: 44px;
-  height: 44px;
-}
-
-#dpad-up { top: 0; left: 43px; }
-#dpad-down { bottom: 0; left: 43px; }
-#dpad-left { top: 43px; left: 0; }
-#dpad-right { top: 43px; right: 0; }
-
-#action-pad {
-  position: absolute;
-  right: 20px;
-  bottom: 10px;
-  width: 130px;
-  height: 130px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-#btn-shoot {
-  width: 60px;
-  height: 60px;
-  background-color: rgba(255, 51, 51, 0.3);
-  border-color: rgba(255, 51, 51, 0.7);
-  font-size: 14px;
-}
-
-#btn-weapon {
-  width: 46px;
-  height: 46px;
-  font-size: 12px;
-}
 
 /* Roguelike Upgrade Cards */
 .upgrade-card {
@@ -637,9 +562,7 @@ body {
     border: none;
     border-radius: 0;
   }
-  #mobile-controls {
-    display: block;
-  }
+
 }
 
 /* Pause & Settings overlay custom styling */

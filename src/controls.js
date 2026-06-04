@@ -4,7 +4,7 @@
  * and DPAD mobile buttons, translating them to player rotation and movement states.
  */
 
-import { Player, Weapons, keys, activeScreen, canvas, showScreen, updateLeaderboardsUI, switchLeaderboardTab } from './main.js';
+import { Player, Weapons, keys, activeScreen, showScreen, updateLeaderboardsUI, switchLeaderboardTab } from './main.js';
 import { generateFloor } from './map.js';
 import { SoundEngine } from './audio.js';
 import { handleShoot } from './combat.js';
@@ -182,57 +182,5 @@ export function setupControls(canvas) {
     });
   });
 
-  // Mobile Touch controls
-  function bindTouchEvent(elementId, actionDown, actionUp) {
-    const btn = document.getElementById(elementId);
-    if (!btn) return;
-    btn.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      actionDown();
-    }, { passive: false });
 
-    btn.addEventListener('touchend', (e) => {
-      e.preventDefault();
-      actionUp();
-    }, { passive: false });
-  }
-
-  bindTouchEvent('dpad-up', () => { keys.w = true; }, () => { keys.w = false; });
-  bindTouchEvent('dpad-down', () => { keys.s = true; }, () => { keys.s = false; });
-  bindTouchEvent('dpad-left', () => { keys.a = true; }, () => { keys.a = false; });
-  bindTouchEvent('dpad-right', () => { keys.d = true; }, () => { keys.d = false; });
-
-  document.getElementById('btn-shoot').addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    if (activeScreen === 'game') handleShoot();
-  });
-
-  document.getElementById('btn-weapon').addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    if (activeScreen === 'game') {
-      Player.currentWeapon = (Player.currentWeapon + 1) % Weapons.length;
-      SoundEngine.play('click');
-    }
-  });
-
-  if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
-    document.getElementById('mobile-controls').style.display = 'block';
-    setupTouchCameraLook();
-  }
-}
-
-export function setupTouchCameraLook() {
-  let touchStartX = 0;
-  canvas.addEventListener('touchstart', (e) => {
-    touchStartX = e.touches[0].clientX;
-  }, { passive: true });
-
-  canvas.addEventListener('touchmove', (e) => {
-    if (activeScreen !== 'game') return;
-    const currentX = e.touches[0].clientX;
-    const diffX = currentX - touchStartX;
-    const sensitivity = 0.008;
-    rotateCamera(diffX * sensitivity);
-    touchStartX = currentX;
-  }, { passive: true });
 }
