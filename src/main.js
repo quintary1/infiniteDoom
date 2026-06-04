@@ -620,9 +620,9 @@ function handleEnemyAI(dt) {
           SoundEngine.play('enemy_shoot');
           spawnSpark(sprite.x, sprite.y, 4, '#ff3333');
 
-          const hitChance = Math.max(0.1, 0.7 - (dist * 0.12));
+          const hitChance = Math.max(0.1, 0.55 - (dist * 0.10));
           if (Math.random() < hitChance) {
-            let dmg = 6 + Math.floor(Math.random() * 8) + Player.floor;
+            let dmg = 4 + Math.floor(Math.random() * 5) + Math.floor(Player.floor * 0.5);
             dmg *= Math.pow(0.9, Player.upgrades.shield_plating || 0);
             dmg = Math.floor(dmg);
 
@@ -635,7 +635,7 @@ function handleEnemyAI(dt) {
         if (sprite.burstCount === 0) {
           sprite.burstCount = undefined;
           sprite.state = 'chase';
-          sprite.shootCooldown = 1400 + Math.random() * 500;
+          sprite.shootCooldown = 2000 + Math.random() * 600;
         }
       } 
       // 3. STANDARD GUARD
@@ -1638,8 +1638,8 @@ function setupDebugMenu() {
       subtype: 'heavy',
       x: Player.x + Player.dirX * 1.5,
       y: Player.y + Player.dirY * 1.5,
-      health: 130 + Player.floor * 30,
-      maxHp: 130 + Player.floor * 30,
+      health: 90 + Player.floor * 15,
+      maxHp: 90 + Player.floor * 15,
       state: 'chase',
       speed: 0.8,
       shootCooldown: 0,
