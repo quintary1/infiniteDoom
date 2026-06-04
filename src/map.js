@@ -379,7 +379,7 @@ export function generateFloor(player, customWidth = 0, customHeight = 0) {
   }
 }
 
-export function checkCollisions(player, newX, newY, debugCheats, radius = 0.35) {
+export function checkCollisions(player, newX, newY, debugCheats, radius = 0.25) {
   if (debugCheats && debugCheats.noclip) {
     return { x: newX, y: newY };
   }
