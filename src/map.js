@@ -386,19 +386,45 @@ export function checkCollisions(player, newX, newY, debugCheats, radius = 0.35) 
   const res = { x: player.x, y: player.y };
 
   function isBlocked(x, y) {
-    const gridX = Math.floor(x);
-    const gridY = Math.floor(y);
-    
-    if (gridX < 0 || gridX >= MapWidth || gridY < 0 || gridY >= MapHeight) return true;
-    
-    if (map[gridY][gridX] > 0 && map[gridY][gridX] !== 4) return true;
-    
+    // Check map boundary with radius
+    if (x - radius < 0 || x + radius >= MapWidth || y - radius < 0 || y + radius >= MapHeight) {
+      return true;
+    }
+
+    // Determine overlapping grid cells based on player bounding box
+    const minGridX = Math.floor(x - radius);
+    const maxGridX = Math.floor(x + radius);
+    const minGridY = Math.floor(y - radius);
+    const maxGridY = Math.floor(y + radius);
+
+    for (let gY = minGridY; gY <= maxGridY; gY++) {
+      for (let gX = minGridX; gX <= maxGridX; gX++) {
+        if (gX < 0 || gX >= MapWidth || gY < 0 || gY >= MapHeight) {
+          return true;
+        }
+        
+        // Grid cell is blocked if it is a wall/door (not walkable, and not elevator exit 4)
+        if (map[gY][gX] > 0 && map[gY][gX] !== 4) {
+          // Find the closest point on the cell's AABB to the circle center (x, y)
+          const closestX = Math.max(gX, Math.min(x, gX + 1));
+          const closestY = Math.max(gY, Math.min(y, gY + 1));
+          
+          // Distance check
+          const distX = x - closestX;
+          const distY = y - closestY;
+          if (distX * distX + distY * distY < radius * radius) {
+            return true;
+          }
+        }
+      }
+    }
+
     let sprHit = false;
     sprites.forEach(s => {
       if (s.solid && s !== player) {
         const dx = x - s.x;
         const dy = y - s.y;
-        if (dx*dx + dy*dy < 0.2) sprHit = true;
+        if (dx * dx + dy * dy < 0.2) sprHit = true;
       }
     });
     return sprHit;

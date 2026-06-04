@@ -1032,20 +1032,39 @@ function updateGame(timestamp) {
       rotateCamera(rotSpeed);
     }
 
-    // Check locked doors collision (Cell 5 represents Locked Red Door, Cell 6 locked Blue Door)
-    const checkCellX = Math.floor(newX);
-    const checkCellY = Math.floor(newY);
-    const targetCell = map[checkCellY] ? map[checkCellY][checkCellX] : 0;
-    
-    let allowMovement = true;
-    
+    // Check locked doors (Cell 5 represents Locked Red Door, Cell 6 locked Blue Door)
+    // We check both directly in front of the player (facing requirement) and at the player's potential center as a fallback.
+    let targetCell = 0;
+    let targetCellX = 0;
+    let targetCellY = 0;
+
+    const frontX = Player.x + Player.dirX * 0.5;
+    const frontY = Player.y + Player.dirY * 0.5;
+    const frontCellX = Math.floor(frontX);
+    const frontCellY = Math.floor(frontY);
+    const frontCell = map[frontCellY] ? map[frontCellY][frontCellX] : 0;
+
+    if (frontCell === 5 || frontCell === 6) {
+      targetCell = frontCell;
+      targetCellX = frontCellX;
+      targetCellY = frontCellY;
+    } else {
+      const checkCellX = Math.floor(newX);
+      const checkCellY = Math.floor(newY);
+      const checkCell = map[checkCellY] ? map[checkCellY][checkCellX] : 0;
+      if (checkCell === 5 || checkCell === 6) {
+        targetCell = checkCell;
+        targetCellX = checkCellX;
+        targetCellY = checkCellY;
+      }
+    }
+
     if (targetCell === 5) { // Red Locked Door
       if (Player.hasRedKey) {
-        map[checkCellY][checkCellX] = 0; // Unlock
+        map[targetCellY][targetCellX] = 0; // Unlock
         SoundEngine.play('elevator'); // slide sound
         showHudFlashMessage("RED DOOR UNLOCKED");
       } else {
-        allowMovement = false;
         if (hudFlashText !== "RED KEYCARD REQUIRED!") {
           SoundEngine.play('click');
           showHudFlashMessage("RED KEYCARD REQUIRED!");
@@ -1053,11 +1072,10 @@ function updateGame(timestamp) {
       }
     } else if (targetCell === 6) { // Blue Locked Door
       if (Player.hasBlueKey) {
-        map[checkCellY][checkCellX] = 0;
+        map[targetCellY][targetCellX] = 0;
         SoundEngine.play('elevator');
         showHudFlashMessage("BLUE DOOR UNLOCKED");
       } else {
-        allowMovement = false;
         if (hudFlashText !== "BLUE KEYCARD REQUIRED!") {
           SoundEngine.play('click');
           showHudFlashMessage("BLUE KEYCARD REQUIRED!");
@@ -1065,15 +1083,9 @@ function updateGame(timestamp) {
       }
     }
 
-    if (allowMovement) {
-      const finalPos = checkCollisions(Player, newX, newY, DebugCheats);
-      Player.x = finalPos.x;
-      Player.y = finalPos.y;
-    } else {
-      // Bounce player back slightly
-      Player.x -= Player.dirX * 0.05;
-      Player.y -= Player.dirY * 0.05;
-    }
+    const finalPos = checkCollisions(Player, newX, newY, DebugCheats);
+    Player.x = finalPos.x;
+    Player.y = finalPos.y;
 
     // Reveal Map
     const revealRadius = 4.0;
