@@ -490,6 +490,23 @@ function handleShoot() {
   }
 }
 
+function checkLineOfSight(sprite) {
+  const dx = Player.x - sprite.x;
+  const dy = Player.y - sprite.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist === 0) return true;
+  
+  const steps = Math.floor(dist * 4);
+  for (let i = 1; i < steps; i++) {
+    const cx = Math.floor(sprite.x + (dx * i / steps));
+    const cy = Math.floor(sprite.y + (dy * i / steps));
+    if (map[cy] && map[cy][cx] > 0 && map[cy][cx] !== 4) {
+      return false; // Blocked by wall or locked door
+    }
+  }
+  return true;
+}
+
 function handleEnemyAI(dt) {
   sprites.forEach(sprite => {
     if (sprite.type !== 'enemy' || sprite.state === 'dead') return;
@@ -592,7 +609,7 @@ function handleEnemyAI(dt) {
       // 1. FAST GHOUL ATTACK
       if (sprite.subtype === 'ghoul') {
         if (sprite.shootCooldown <= 0) {
-          if (dist < 1.0) {
+          if (dist < 1.0 && checkLineOfSight(sprite)) {
             SoundEngine.play('hurt');
             spawnSpark(Player.x, Player.y, 4, '#ff3333'); // Scratch sparks
             
@@ -615,16 +632,19 @@ function handleEnemyAI(dt) {
 
           sprite.burstTimer -= dt * 1000;
           if (sprite.burstTimer <= 0 && sprite.burstCount > 0) {
-            SoundEngine.play('enemy_shoot');
-            spawnSpark(sprite.x, sprite.y, 4, '#ff3333');
+            // Check line of sight before each shot in the burst
+            if (checkLineOfSight(sprite)) {
+              SoundEngine.play('enemy_shoot');
+              spawnSpark(sprite.x, sprite.y, 4, '#ff3333');
 
-            const hitChance = Math.max(0.1, 0.55 - (dist * 0.10));
-            if (Math.random() < hitChance) {
-              let dmg = 4 + Math.floor(Math.random() * 5) + Math.floor(Player.floor * 0.5);
-              dmg *= Math.pow(0.9, Player.upgrades.shield_plating || 0);
-              dmg = Math.floor(dmg);
+              const hitChance = Math.max(0.1, 0.55 - (dist * 0.10));
+              if (Math.random() < hitChance) {
+                let dmg = 4 + Math.floor(Math.random() * 5) + Math.floor(Player.floor * 0.5);
+                dmg *= Math.pow(0.9, Player.upgrades.shield_plating || 0);
+                dmg = Math.floor(dmg);
 
-              applyPlayerDamage(dmg);
+                applyPlayerDamage(dmg);
+              }
             }
             sprite.burstCount--;
             sprite.burstTimer = 150; // 150ms delay
@@ -640,16 +660,19 @@ function handleEnemyAI(dt) {
       // 3. STANDARD GUARD
       else {
         if (sprite.shootCooldown <= 0) {
-          SoundEngine.play('enemy_shoot');
-          spawnSpark(sprite.x, sprite.y, 4, '#ff3333');
+          // Check line of sight before shooting
+          if (checkLineOfSight(sprite)) {
+            SoundEngine.play('enemy_shoot');
+            spawnSpark(sprite.x, sprite.y, 4, '#ff3333');
 
-          const hitChance = Math.max(0.1, 0.8 - (dist * 0.15));
-          if (Math.random() < hitChance) {
-            let dmg = 8 + Math.floor(Math.random() * 12) + Player.floor;
-            dmg *= Math.pow(0.9, Player.upgrades.shield_plating || 0);
-            dmg = Math.floor(dmg);
+            const hitChance = Math.max(0.1, 0.8 - (dist * 0.15));
+            if (Math.random() < hitChance) {
+              let dmg = 8 + Math.floor(Math.random() * 12) + Player.floor;
+              dmg *= Math.pow(0.9, Player.upgrades.shield_plating || 0);
+              dmg = Math.floor(dmg);
 
-            applyPlayerDamage(dmg);
+              applyPlayerDamage(dmg);
+            }
           }
           sprite.state = 'chase';
         }
