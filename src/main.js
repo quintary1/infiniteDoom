@@ -586,7 +586,9 @@ function handleEnemyAI(dt) {
         if (sprite.subtype === 'ghoul') {
           sprite.shootCooldown = 300 + Math.random() * 200; // fast ghouls attack rapidly
         } else if (sprite.subtype === 'heavy') {
-          sprite.shootCooldown = 2000 + Math.random() * 600; // heavy elite burst delay
+          if (sprite.shootCooldown <= 0) {
+            sprite.shootCooldown = 600 + Math.random() * 400; // heavy elite initial burst warning delay
+          }
         } else {
           sprite.shootCooldown = 600 + Math.random() * 400; // standard guard
         }
@@ -636,7 +638,7 @@ function handleEnemyAI(dt) {
           if (sprite.burstCount === 0) {
             sprite.burstCount = undefined;
             sprite.state = 'chase';
-            sprite.shootCooldown = 0;
+            sprite.shootCooldown = 1600 + Math.random() * 600; // delay between bursts
           }
         }
       } 
