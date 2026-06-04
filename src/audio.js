@@ -1,25 +1,67 @@
 /**
  * Audio Engine for Grave Escape 3D.
- * Synthesizes retro sound effects and procedural chiptune backbeats using the Web Audio API.
+ * Synthesizes retro sound effects and procedural cyberpunk djent music using the Web Audio API.
  */
 
 export const SoundEngine = {
   ctx: null,
   musicTimeout: null,
-  musicStep: 0,
+  current16thNote: 0,
+  nextNoteTime: 0.0,
+  tempo: 135.0, // BPM
+  lookahead: 25.0, // ms
+  scheduleAheadTime: 0.1, // seconds
   isMusicPlaying: false,
   sfxVolume: 0.35,
   musicVolume: 0.08,
 
+  // Master FX Chain Nodes
+  masterDistortion: null,
+  masterFilter: null,
+  masterGain: null,
+
   init() {
     if (!this.ctx) {
-      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      this.ctx = new AudioContext();
+
+      // Master FX Chain (Distortion -> Lowpass Filter for industrial warmth)
+      this.masterDistortion = this.ctx.createWaveShaper();
+      this.masterDistortion.curve = this.makeDistortionCurve(400);
+      this.masterDistortion.oversample = '4x';
+
+      this.masterFilter = this.ctx.createBiquadFilter();
+      this.masterFilter.type = 'lowpass';
+      this.masterFilter.frequency.setValueAtTime(2500, this.ctx.currentTime);
+
+      this.masterGain = this.ctx.createGain();
+      this.masterGain.gain.setValueAtTime(this.musicVolume, this.ctx.currentTime);
+
+      // Connect Master Chain
+      this.masterDistortion.connect(this.masterFilter);
+      this.masterFilter.connect(this.masterGain);
+      this.masterGain.connect(this.ctx.destination);
     }
+  },
+
+  makeDistortionCurve(amount) {
+    const k = typeof amount === 'number' ? amount : 50;
+    const n_samples = 44100;
+    const curve = new Float32Array(n_samples);
+    const deg = Math.PI / 180;
+    for (let i = 0; i < n_samples; ++i) {
+        const x = (i * 2) / n_samples - 1;
+        curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+    }
+    return curve;
   },
 
   setVolume(sfxVol, musicVol) {
     this.sfxVolume = sfxVol;
     this.musicVolume = musicVol;
+    if (this.masterGain && this.ctx) {
+      this.masterGain.gain.setValueAtTime(musicVol, this.ctx.currentTime);
+    }
   },
 
   play(type) {
@@ -252,26 +294,135 @@ export const SoundEngine = {
   },
 
   // =========================================================================
-  // RETRO TRACK SEQUENCER (Dark Synth Bassline Loops)
+  // CYBERPUNK DJENT SEQUENCER (Mick Gordon inspired dark industrial loop)
   // =========================================================================
+  
+  // Heavy Distorted Djent Bass
+  playBassNote(pitch, time, duration) {
+    const osc1 = this.ctx.createOscillator();
+    const osc2 = this.ctx.createOscillator();
+    const gainNode = this.ctx.createGain();
+    
+    osc1.type = 'sawtooth';
+    osc2.type = 'square';
+    
+    // Detune for a wider, heavier sound
+    osc1.frequency.setValueAtTime(pitch, time);
+    osc2.frequency.setValueAtTime(pitch * 0.992, time);
+    
+    // Amplitude Envelope
+    gainNode.gain.setValueAtTime(0, time);
+    gainNode.gain.linearRampToValueAtTime(1, time + 0.01);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, time + duration);
+    
+    osc1.connect(gainNode);
+    osc2.connect(gainNode);
+    gainNode.connect(this.masterDistortion); // Feed straight into distortion
+    
+    osc1.start(time);
+    osc2.start(time);
+    osc1.stop(time + duration);
+    osc2.stop(time + duration);
+  },
+
+  // Punchy Compressor Kick Drum
+  playKick(time) {
+    const osc = this.ctx.createOscillator();
+    const gainNode = this.ctx.createGain();
+    
+    osc.type = 'sine';
+    // Pitch drop envelope for the "thump"
+    osc.frequency.setValueAtTime(150, time);
+    osc.frequency.exponentialRampToValueAtTime(0.01, time + 0.15);
+    
+    gainNode.gain.setValueAtTime(1.5, time);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, time + 0.15);
+    
+    osc.connect(gainNode);
+    gainNode.connect(this.masterFilter); // Bypass extreme distortion for clean punch
+    
+    osc.start(time);
+    osc.stop(time + 0.16);
+  },
+
+  // Harsh Gated Industrial Snare
+  playSnare(time) {
+    // Generate white noise buffer
+    const bufferSize = this.ctx.sampleRate * 0.2;
+    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+    }
+    
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = buffer;
+    
+    const noiseFilter = this.ctx.createBiquadFilter();
+    noiseFilter.type = 'bandpass';
+    noiseFilter.frequency.setValueAtTime(1000, time);
+    
+    const gainNode = this.ctx.createGain();
+    gainNode.gain.setValueAtTime(1, time);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, time + 0.12);
+    
+    noise.connect(noiseFilter);
+    noiseFilter.connect(gainNode);
+    gainNode.connect(this.masterDistortion);
+    
+    noise.start(time);
+    noise.stop(time + 0.15);
+  },
+
+  scheduleNote(step, time) {
+    if (this.musicVolume <= 0.001) return;
+
+    const secondsPer16th = 60.0 / this.tempo / 4.0;
+    
+    const E1 = 41.20; // Low E tuning pitch
+    const G1 = 49.00;
+
+    const bassPattern  = [E1, E1,  0, E1,  0, E1, G1,  0, E1,  0, E1, E1,  0, G1, E1,  0];
+    const kickPattern  = [1,  0,  0,  0,  1,  0,  0,  0,  1,  0,  0,  1,  0,  0,  0,  0];
+    const snarePattern = [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  0];
+
+    if (kickPattern[step] === 1) this.playKick(time);
+    if (snarePattern[step] === 1) this.playSnare(time);
+    
+    if (bassPattern[step] > 0) {
+        // Vary legatos for dynamic syncopation
+        const duration = (step % 3 === 0) ? secondsPer16th * 1.5 : secondsPer16th * 0.8;
+        this.playBassNote(bassPattern[step], time, duration);
+    }
+  },
+
+  scheduler() {
+    if (!this.isMusicPlaying) return;
+
+    while (this.nextNoteTime < this.ctx.currentTime + this.scheduleAheadTime) {
+        this.scheduleNote(this.current16thNote, this.nextNoteTime);
+        
+        // Advance to next 16th note
+        const secondsPer16th = 60.0 / this.tempo / 4.0;
+        this.nextNoteTime += secondsPer16th;
+        this.current16thNote = (this.current16thNote + 1) % 16;
+    }
+
+    this.musicTimeout = setTimeout(() => this.scheduler(), this.lookahead);
+  },
+
   startMusic() {
     this.init();
     if (!this.ctx || this.isMusicPlaying) return;
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+    
     this.isMusicPlaying = true;
-    this.musicStep = 0;
-    
-    const stepTime = 0.22; // Speed of beats (eighth notes at ~136 BPM)
-    
-    const runScheduler = () => {
-      if (!this.isMusicPlaying) return;
-      const now = this.ctx.currentTime;
-      this.scheduleBeat(this.musicStep, now);
-      this.musicStep = (this.musicStep + 1) % 16;
-      
-      this.musicTimeout = setTimeout(runScheduler, stepTime * 1000);
-    };
-    
-    runScheduler();
+    this.current16thNote = 0;
+    this.nextNoteTime = this.ctx.currentTime;
+    this.scheduler();
+    console.log("Rip and tear until it is done...");
   },
 
   stopMusic() {
@@ -280,126 +431,5 @@ export const SoundEngine = {
       clearTimeout(this.musicTimeout);
       this.musicTimeout = null;
     }
-  },
-
-  scheduleBeat(step, time) {
-    if (this.musicVolume <= 0.001) return;
-
-    // Bass drum on downbeats (0, 4, 8, 12)
-    if (step % 4 === 0) {
-      this.playProceduralKick(time);
-    }
-    
-    // Snare drum on backbeats (4, 12)
-    if (step % 8 === 4) {
-      this.playProceduralSnare(time);
-    }
-
-    // Hihat on offbeats (2, 6, 10, 14)
-    if (step % 4 === 2) {
-      this.playProceduralHihat(time);
-    }
-    
-    // Industrial Cyber Bassline (notes in HZ)
-    // A1 (55Hz), C2 (65.4Hz), D2 (73.4Hz), G1 (49Hz)
-    const bassPattern = [
-      55.0, 55.0, 0, 55.0,
-      65.4, 65.4, 0, 65.4,
-      73.4, 73.4, 0, 73.4,
-      49.0, 49.0, 55.0, 65.4
-    ];
-    
-    const freq = bassPattern[step];
-    if (freq > 0) {
-      this.playProceduralBassNote(freq, time);
-    }
-  },
-
-  playProceduralKick(time) {
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(110, time);
-    osc.frequency.exponentialRampToValueAtTime(0.01, time + 0.12);
-    
-    gain.gain.setValueAtTime(this.musicVolume * 1.5, time);
-    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.12);
-    
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-    osc.start(time);
-    osc.stop(time + 0.12);
-  },
-
-  playProceduralSnare(time) {
-    const bufferSize = this.ctx.sampleRate * 0.08;
-    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = Math.random() * 2 - 1;
-    }
-    const noise = this.ctx.createBufferSource();
-    noise.buffer = buffer;
-    
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = 'bandpass';
-    filter.frequency.setValueAtTime(900, time);
-    
-    const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(this.musicVolume * 0.7, time);
-    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
-    
-    noise.connect(filter);
-    filter.connect(gain);
-    gain.connect(this.ctx.destination);
-    noise.start(time);
-    noise.stop(time + 0.08);
-  },
-
-  playProceduralHihat(time) {
-    const bufferSize = this.ctx.sampleRate * 0.03;
-    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = Math.random() * 2 - 1;
-    }
-    const noise = this.ctx.createBufferSource();
-    noise.buffer = buffer;
-    
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = 'highpass';
-    filter.frequency.setValueAtTime(8000, time);
-    
-    const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(this.musicVolume * 0.4, time);
-    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.03);
-    
-    noise.connect(filter);
-    filter.connect(gain);
-    gain.connect(this.ctx.destination);
-    noise.start(time);
-    noise.stop(time + 0.03);
-  },
-
-  playProceduralBassNote(freq, time) {
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(freq, time);
-    
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(250, time);
-    filter.frequency.exponentialRampToValueAtTime(60, time + 0.16);
-    
-    gain.gain.setValueAtTime(this.musicVolume * 1.0, time);
-    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.18);
-    
-    osc.connect(filter);
-    filter.connect(gain);
-    gain.connect(this.ctx.destination);
-    osc.start(time);
-    osc.stop(time + 0.18);
   }
 };
